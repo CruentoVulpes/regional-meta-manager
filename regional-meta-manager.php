@@ -3,7 +3,7 @@
  * Plugin Name: Regional Meta Manager
  * Plugin URI: https://example.com/regional-meta-manager
  * Description: Управление региональными мета-данными страниц (lang, canonical, hreflang).
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Vlad
  * Author URI: https://example.com
  * License: GPL v2 or later
