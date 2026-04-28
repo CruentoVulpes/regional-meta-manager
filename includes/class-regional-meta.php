@@ -37,7 +37,7 @@ class RegionalMeta
             'regional_meta_box',
             'Региональные настройки',
             [$this, 'renderRegionalMetaBox'],
-            'page',
+            ['page', 'post'],
             'normal',
             'high'
         );
@@ -251,7 +251,7 @@ class RegionalMeta
     {
         global $post;
         
-        if ($post && get_post_type($post->ID) === 'page') {
+        if ($post) {
             $regional_canonical = get_post_meta($post->ID, '_regional_canonical', true);
             if (!empty($regional_canonical) && filter_var($regional_canonical, FILTER_VALIDATE_URL)) {
                 return false;
@@ -278,8 +278,8 @@ class RegionalMeta
             return;
         }
         
-        $pages = get_posts([
-            'post_type' => 'page',
+        $posts = get_posts([
+            'post_type' => ['page', 'post'],
             'post_status' => 'publish',
             'numberposts' => -1,
             'meta_query' => [
@@ -290,8 +290,8 @@ class RegionalMeta
             ]
         ]);
 
-        foreach ($pages as $page) {
-            $canonical = get_post_meta($page->ID, '_regional_canonical', true);
+        foreach ($posts as $found_post) {
+            $canonical = get_post_meta($found_post->ID, '_regional_canonical', true);
             if ($canonical && filter_var($canonical, FILTER_VALIDATE_URL)) {
                 $canonical_path = parse_url($canonical, PHP_URL_PATH);
                 
@@ -300,18 +300,23 @@ class RegionalMeta
                     $request_path_clean = rtrim($request_path, '/');
                     
                     if ($canonical_path === $request_path_clean) {
-                        $transfer_content = get_post_meta($page->ID, '_regional_canonical_transfer_content', true);
+                        $transfer_content = get_post_meta($found_post->ID, '_regional_canonical_transfer_content', true);
                         if (!$transfer_content) {
                             $path_for_lookup = trim($request_path_clean, '/');
-                            $existing_page = $path_for_lookup ? get_page_by_path($path_for_lookup, OBJECT, 'page') : null;
-                            if ($existing_page && (int) $existing_page->ID !== (int) $page->ID) {
+                            $existing = $path_for_lookup ? get_page_by_path($path_for_lookup, OBJECT, ['page', 'post']) : null;
+                            if ($existing && (int) $existing->ID !== (int) $found_post->ID) {
                                 return;
                             }
                         }
                         
-                        $wp->query_vars['pagename'] = get_page_uri($page->ID);
-                        $wp->query_vars['page_id'] = $page->ID;
-                        $wp->query_vars['post_type'] = 'page';
+                        if ($found_post->post_type === 'page') {
+                            $wp->query_vars['pagename'] = get_page_uri($found_post->ID);
+                            $wp->query_vars['page_id'] = $found_post->ID;
+                            $wp->query_vars['post_type'] = 'page';
+                        } else {
+                            $wp->query_vars['p'] = $found_post->ID;
+                            $wp->query_vars['post_type'] = $found_post->post_type;
+                        }
                         break;
                     }
                 }
@@ -323,7 +328,7 @@ class RegionalMeta
     {
         global $post;
         
-        if (!$post || get_post_type($post->ID) !== 'page') {
+        if (!$post) {
             return;
         }
         
@@ -342,7 +347,7 @@ class RegionalMeta
 
         global $post;
         
-        if ($post && get_post_type($post->ID) === 'page') {
+        if ($post) {
             $has_regional = get_post_meta($post->ID, '_regional_canonical', true);
             
             if ($has_regional) {
@@ -355,7 +360,7 @@ class RegionalMeta
         $current_path = rtrim($current_path, '/');
         
         $pages = get_posts([
-            'post_type' => 'page',
+            'post_type' => ['page', 'post'],
             'post_status' => 'publish',
             'numberposts' => -1,
             'meta_query' => [
@@ -397,7 +402,7 @@ class RegionalMeta
     {
         global $post;
         
-        if (!$post || !is_singular('page')) {
+        if (!$post || !is_singular()) {
             return;
         }
 
@@ -419,7 +424,7 @@ class RegionalMeta
     {
         global $post;
         
-        if (!$post || get_post_type($post->ID) !== 'page') {
+        if (!$post) {
             return;
         }
         
@@ -438,7 +443,7 @@ class RegionalMeta
     {
         global $post;
         
-        if (!$post || get_post_type($post->ID) !== 'page') {
+        if (!$post) {
             return $buffer;
         }
         
@@ -557,12 +562,9 @@ class RegionalMeta
         }
 
         if ($post_id) {
-            $post_type = get_post_type($post_id);
-            if ($post_type === 'page') {
-                $lang = get_post_meta($post_id, '_regional_lang', true);
-                if (!empty($lang)) {
-                    return $lang;
-                }
+            $lang = get_post_meta($post_id, '_regional_lang', true);
+            if (!empty($lang)) {
+                return $lang;
             }
         }
 

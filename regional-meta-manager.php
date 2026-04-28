@@ -3,7 +3,7 @@
  * Plugin Name: Regional Meta Manager
  * Plugin URI: https://example.com/regional-meta-manager
  * Description: Управление региональными мета-данными страниц (lang, canonical, hreflang).
- * Version: 1.0.4
+ * Version: 1.1.0
  * Author: Vlad
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('RMM_VERSION', '1.0.3');
+define('RMM_VERSION', '1.1.0');
 define('RMM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('RMM_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -36,8 +36,10 @@ if ( file_exists( RMM_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.
 }
 
 require_once RMM_PLUGIN_DIR . 'includes/class-regional-meta.php';
+require_once RMM_PLUGIN_DIR . 'includes/class-bulk-manager.php';
 
 function rmm_init() {
     new RegionalMeta();
+    new RMMBulkManager();
 }
 add_action('plugins_loaded', 'rmm_init');
