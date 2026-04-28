@@ -3,7 +3,7 @@
  * Plugin Name: Regional Meta Manager
  * Plugin URI: https://example.com/regional-meta-manager
  * Description: Regional page meta (lang, canonical, hreflang).
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Vlad
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('RMM_VERSION', '1.1.1');
+define('RMM_VERSION', '1.1.2');
 define('RMM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('RMM_PLUGIN_URL', plugin_dir_url(__FILE__));
 

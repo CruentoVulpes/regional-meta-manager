@@ -502,6 +502,13 @@ class RegionalMeta
             $head_start = $head_matches[1];
             $head_content = $head_matches[2];
             $head_end = $head_matches[3];
+
+            $hreflang_data = $this->getHreflangData($post->ID);
+            // Remove every hreflang link from <head> so SEO plugins / duplicates do not leave stale codes;
+            // we re-output hreflang only from RMM meta below.
+            if (!empty($hreflang_data)) {
+                $head_content = preg_replace('/<link[^>]*\bhreflang\s*=\s*["\'][^"\']*["\'][^>]*>/i', '', $head_content);
+            }
             
             $canonical_url = $this->getCanonicalUrl($post->ID);
             if ($canonical_url && filter_var($canonical_url, FILTER_VALIDATE_URL)) {
@@ -514,7 +521,6 @@ class RegionalMeta
                 $meta_tags .= '<link rel="canonical" href="' . esc_url($canonical_url) . '">' . PHP_EOL;
             }
             
-            $hreflang_data = $this->getHreflangData($post->ID);
             if (!empty($hreflang_data)) {
                 foreach ($hreflang_data as $item) {
                     if (!empty($item['lang']) && !empty($item['url'])) {
