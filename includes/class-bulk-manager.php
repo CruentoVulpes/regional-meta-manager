@@ -477,19 +477,39 @@ class RMMBulkManager
         wp_send_json_success(['replaced' => $replaced, 'generated' => $generated]);
     }
 
+    /**
+     * BCP47-style match: trimmed, case-insensitive (e.g. DB ru-RU vs input ru-ru).
+     */
+    private function langCodesMatch($stored, string $needle): bool
+    {
+        if (!is_string($stored)) {
+            return false;
+        }
+        $stored = trim($stored);
+        $needle  = trim($needle);
+        if ($stored === '' || $needle === '') {
+            return false;
+        }
+        return strcasecmp($stored, $needle) === 0;
+    }
+
     public function ajaxLangReplace(): void
     {
         if (!wp_verify_nonce($_POST['nonce'] ?? '', self::NONCE_ACTION) || !current_user_can('manage_options')) {
             wp_send_json_error('Ошибка безопасности');
         }
 
-        $old_lang             = sanitize_text_field($_POST['old_lang'] ?? '');
-        $new_lang             = sanitize_text_field($_POST['new_lang'] ?? '');
-        $replace_html_lang    = !empty($_POST['replace_html_lang']);
+        $old_lang              = sanitize_text_field(wp_unslash($_POST['old_lang'] ?? ''));
+        $new_lang              = sanitize_text_field(wp_unslash($_POST['new_lang'] ?? ''));
+        $replace_html_lang     = !empty($_POST['replace_html_lang']);
         $replace_hreflang_code = !empty($_POST['replace_hreflang_code']);
 
-        if (!$old_lang || !$new_lang) {
+        if ($old_lang === '' || $new_lang === '') {
             wp_send_json_error('Укажите оба языковых кода');
+        }
+
+        if (0 === strcasecmp($old_lang, $new_lang)) {
+            wp_send_json_error('Старый и новый код совпадают');
         }
 
         $posts = get_posts([
@@ -504,7 +524,7 @@ class RMMBulkManager
 
             if ($replace_html_lang) {
                 $lang = get_post_meta($pid, '_regional_lang', true);
-                if ($lang === $old_lang) {
+                if ($this->langCodesMatch($lang, $old_lang)) {
                     update_post_meta($pid, '_regional_lang', $new_lang);
                     $count++;
                 }
@@ -515,7 +535,11 @@ class RMMBulkManager
                 if (is_array($hreflang) && !empty($hreflang)) {
                     $updated = false;
                     foreach ($hreflang as &$h) {
-                        if (isset($h['lang']) && $h['lang'] === $old_lang) {
+                        if (!is_array($h)) {
+                            continue;
+                        }
+                        $hl = $h['lang'] ?? '';
+                        if ($this->langCodesMatch(is_string($hl) ? $hl : '', $old_lang)) {
                             $h['lang'] = $new_lang;
                             $updated   = true;
                             $count++;
